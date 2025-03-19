@@ -1,12 +1,11 @@
 using AccountAPI.ViewModels;
 using Infrastructure.Services;
-using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AccountAPI.Controllers;
 
 [ApiController]
-[Microsoft.AspNetCore.Components.Route("[controller]")]
+[Route("api/[controller]")]
 public class AccountsActionController : ControllerBase
 {
     private readonly ILogger<AccountsActionController> _logger;
@@ -18,22 +17,52 @@ public class AccountsActionController : ControllerBase
         _accountService = accountService;
     }
 
-    [HttpGet("{id}")]
-    public double GetBalance(int userId)
+    [HttpGet("{userId}")]
+    public IActionResult GetBalance(int userId)
     {
-        return _accountService.GetBalance(userId);
-    }
-    [HttpPut("{id}")]
-    public double UpdateBalance(string action, int id, double amount)
-    {
-        switch(action)
+        try
         {
-            case "withdraw":
-                return _accountService.UpdateBalance("withdraw", id, amount);
-            case "deposit":
-                return _accountService.UpdateBalance("deposit", id, amount);
-            default:
-                return _accountService.UpdateBalance("deposit", id, amount);
+            double balance = _accountService.GetBalance(userId);
+            return Ok(balance);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving balance for user {Id}", userId);
+            return StatusCode(500, "Internal Server Error");
+        }
+    }
+
+    [HttpPut("{userId}")]
+    public IActionResult UpdateBalance(int userId, int accountId, [FromQuery] string action, [FromQuery] double amount)
+    {
+        try
+        {
+            double updatedBalance = _accountService.UpdateBalance(action, accountId, userId, amount);
+            var user = _accountService.GetAccountById(userId, accountId);
+
+            var userViewModel = new UserViewModel
+            {
+                Id = user.User.UserId,
+                Success = true,
+                Account = new List<AccountViewModel>
+            {
+                new AccountViewModel
+                {
+                    AccountId = user.AccountId,
+                    Balance = updatedBalance
+                }
+            }
+
+            };
+
+            return Ok(userViewModel);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating balance for user {Id}", userId);
+            return StatusCode(500, "Internal Server Error");
         }
     }
 }
+}
+

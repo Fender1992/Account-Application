@@ -12,10 +12,10 @@ namespace Infrastructure.Services
     {
         AccountDTO GetAccountById(int userId, int accountId);
         double GetBalance(int userId);
-        double UpdateBalance(string action, int accountId, double amount);
+        double UpdateBalance(string action, int userId, int accountId, double amount);
     }
-    
-public class AccountRepository : IAccountRepository
+
+    public class AccountRepository : IAccountRepository
     {
         UsersAccounts usersAccounts { get; set; } = new UsersAccounts();
         public AccountDTO GetAccountById(int userId, int accountId)
@@ -25,12 +25,13 @@ public class AccountRepository : IAccountRepository
                 .SelectMany(e => e.Account)
                 .FirstOrDefault(a => a.AccountId == accountId) ?? new AccountDTO();
         }
-        public double GetBalance(int userId)
+        public double GetBalance(int userId, int accountId)
         {
             var user = usersAccounts.users.FirstOrDefault(x => x.UserId == userId);
+            
             if (user != null)
             {
-                var account = user.Account.FirstOrDefault();
+                var account = user.Account.FirstOrDefault(x => x.AccountId == accountId);
                 if (account != null)
                 {
                     return account.Balance;
@@ -38,17 +39,19 @@ public class AccountRepository : IAccountRepository
             }
             return 0.0;
         }
-        public double UpdateBalance(string action, int accountId, double amount)
+        public UserDTO UpdateBalance(string action, int userId, int accountId, double amount)
         {
-            double balance = GetBalance(accountId);
+            double balance = GetBalance(accountId, userId);
             switch (action)
             {
                 case "withdraw":
-                    return balance -= amount;
+                    balance -= amount;
+                    return usersAccounts.users.FirstOrDefault(x => x.UserId == userId) ?? new UserDTO();
                 case "deposit":
-                    return balance += amount;
+                    balance += amount;
+                    return usersAccounts.users.FirstOrDefault(x => x.UserId == userId) ?? new UserDTO();
                 default:
-                    return balance += amount;
+                    return new UserDTO();
             }
         }
     }

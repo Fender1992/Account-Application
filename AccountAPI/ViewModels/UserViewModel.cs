@@ -9,6 +9,8 @@ namespace AccountAPI.ViewModels
         public string Password { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
+        public bool Success { get; set; } = false;
+
         public List<AccountViewModel> Account { get; set; }
 
         public static UserDTO ToDTO(UserViewModel userViewModel)

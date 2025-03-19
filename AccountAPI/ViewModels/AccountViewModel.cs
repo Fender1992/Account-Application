@@ -7,6 +7,5 @@ namespace AccountAPI.ViewModels
         public double Balance { get; set; }
         public string CurrencyCode { get; set; }
         public bool CanEdit { get; set; }
-        public bool Status { get; set; }
     }
 }
