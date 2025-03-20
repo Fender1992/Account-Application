@@ -21,6 +21,7 @@ namespace AccountAPI.ViewModels
                 Password = userViewModel.Password,
                 FirstName = userViewModel.FirstName,
                 LastName = userViewModel.LastName,
+                Success = userViewModel.Success,
                 Account = userViewModel.Account.Select(account => new AccountDTO
                 {
                     AccountId = account.AccountId,
@@ -39,6 +40,7 @@ namespace AccountAPI.ViewModels
                 Password = userDTO.Password,
                 FirstName = userDTO.FirstName,
                 LastName = userDTO.LastName,
+                Success = userDTO.Success,
                 Account = userDTO.Account.Select(account => new AccountViewModel
                 {
                     AccountId = account.AccountId,

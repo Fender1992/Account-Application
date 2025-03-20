@@ -11,8 +11,8 @@ namespace Infrastructure.Services
     public interface IAccountRepository
     {
         AccountDTO GetAccountById(int userId, int accountId);
-        double GetBalance(int userId);
-        double UpdateBalance(string action, int userId, int accountId, double amount);
+        double GetBalance(int userId, int accountId);
+        UserDTO UpdateBalance(string action, int userId, int accountId, double amount);
     }
 
     public class AccountRepository : IAccountRepository

@@ -1,4 +1,5 @@
 using AccountAPI.ViewModels;
+using Application.DTO_s;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,19 +11,22 @@ public class AccountsActionController : ControllerBase
 {
     private readonly ILogger<AccountsActionController> _logger;
     private readonly IAccountRepository _accountService;
+    private readonly IUsersRepository _userRepository;
+    private UserViewModel userViewModel { get; set; } = new UserViewModel();
 
-    public AccountsActionController(ILogger<AccountsActionController> logger, IAccountRepository accountService)
+    public AccountsActionController(ILogger<AccountsActionController> logger, IAccountRepository accountService, IUsersRepository userRepository)
     {
         _logger = logger;
         _accountService = accountService;
+        _userRepository = userRepository;
     }
 
     [HttpGet("{userId}")]
-    public IActionResult GetBalance(int userId)
+    public IActionResult GetBalance(int userId, int accountId)
     {
         try
         {
-            double balance = _accountService.GetBalance(userId);
+            double balance = _accountService.GetBalance(userId, accountId);
             return Ok(balance);
         }
         catch (Exception ex)
@@ -37,22 +41,21 @@ public class AccountsActionController : ControllerBase
     {
         try
         {
-            double updatedBalance = _accountService.UpdateBalance(action, accountId, userId, amount);
-            var user = _accountService.GetAccountById(userId, accountId);
+            UserDTO user = _accountService.UpdateBalance(action, userId, accountId, amount);
+            var _u = UserViewModel.ToViewModel(user);
 
             var userViewModel = new UserViewModel
             {
-                Id = user.User.UserId,
+                Id = user.UserId,
                 Success = true,
                 Account = new List<AccountViewModel>
-            {
-                new AccountViewModel
                 {
-                    AccountId = user.AccountId,
-                    Balance = updatedBalance
+                    new AccountViewModel
+                    {
+                        AccountId = user.Account.FirstOrDefault(x => x.AccountId == accountId)?.AccountId ?? 0,
+                        Balance = user.Account.FirstOrDefault(x => x.AccountId == accountId)?.Balance ?? 0,
+                    }
                 }
-            }
-
             };
 
             return Ok(userViewModel);
@@ -64,5 +67,5 @@ public class AccountsActionController : ControllerBase
         }
     }
 }
-}
+
 

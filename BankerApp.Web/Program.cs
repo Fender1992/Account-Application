@@ -9,6 +9,9 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<WeatherForecastService>();
 
+builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddScoped<IUsersRepository, UsersRepository>();
+
 var allowedOrigins = "_allowedOrigins";
 builder.Services.AddCors(options =>
 {

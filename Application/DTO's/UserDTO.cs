@@ -15,5 +15,6 @@ namespace Application.DTO_s
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public List<AccountDTO> Account { get; set; }
+        public bool Success { get; set; }
     }
 }
