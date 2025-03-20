@@ -14,6 +14,6 @@ namespace Domain.Entities
         public string CurrencyCode { get; set; }
         public bool CanEdit { get; set; }
         public User User { get; set; }
-
+        public string AccountType { get; set; }
     }
 }

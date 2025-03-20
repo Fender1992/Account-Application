@@ -14,5 +14,6 @@ namespace Application.DTO_s
         public string CurrencyCode { get; set; }
         public bool CanEdit { get; set; }
         public UserDTO User { get; set; }
+        public string AccountType { get; set; }
     }
 }

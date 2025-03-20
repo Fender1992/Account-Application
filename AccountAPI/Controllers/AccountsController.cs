@@ -6,15 +6,14 @@ using Microsoft.AspNetCore.Mvc;
 namespace AccountAPI.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
-public class AccountsActionController : ControllerBase
+[Route("api/account/[controller]")]
+public class AccountsController : ControllerBase
 {
-    private readonly ILogger<AccountsActionController> _logger;
+    private readonly ILogger<AccountsController> _logger;
     private readonly IAccountRepository _accountService;
     private readonly IUsersRepository _userRepository;
-    private UserViewModel userViewModel { get; set; } = new UserViewModel();
-
-    public AccountsActionController(ILogger<AccountsActionController> logger, IAccountRepository accountService, IUsersRepository userRepository)
+    private List<string> errors = new List<string>();
+    public AccountsController(ILogger<AccountsController> logger, IAccountRepository accountService, IUsersRepository userRepository)
     {
         _logger = logger;
         _accountService = accountService;
@@ -37,28 +36,48 @@ public class AccountsActionController : ControllerBase
     }
 
     [HttpPut("{userId}")]
+    [ValidateAntiForgeryToken]
     public IActionResult UpdateBalance(int userId, int accountId, [FromQuery] string action, [FromQuery] double amount)
     {
+        if (userId <= 0)
+            errors.Add("User ID must be greater than zero.");
+
+        if (accountId <= 0)
+            errors.Add("Account ID must be greater than zero.");
+
+        if (string.IsNullOrWhiteSpace(action) || !(action == "deposit" || action == "withdraw"))
+            errors.Add("Action must be either 'deposit' or 'withdraw'.");
+
+        if (amount <= 0)
+            errors.Add("Amount must be greater than zero.");
+
+        if (errors.Any())
+            return BadRequest(new { errors });
+
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
         try
         {
             UserDTO user = _accountService.UpdateBalance(action, userId, accountId, amount);
             var _u = UserViewModel.ToViewModel(user);
 
-            var userViewModel = new UserViewModel
+            var userViewModel = new 
             {
                 Id = user.UserId,
                 Success = true,
-                Account = new List<AccountViewModel>
-                {
-                    new AccountViewModel
-                    {
-                        AccountId = user.Account.FirstOrDefault(x => x.AccountId == accountId)?.AccountId ?? 0,
-                        Balance = user.Account.FirstOrDefault(x => x.AccountId == accountId)?.Balance ?? 0,
-                    }
-                }
+                ccountId = user.Account.FirstOrDefault(x => x.AccountId == accountId)?.AccountId ?? 0,
+                Balance = _accountService.GetBalance(userId, accountId),
+                
             };
 
-            return Ok(userViewModel);
+            return Ok(new
+            {
+                message = "Balance updated successfully.",
+                user = userViewModel
+            });
+
         }
         catch (Exception ex)
         {

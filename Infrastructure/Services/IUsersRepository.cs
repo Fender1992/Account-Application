@@ -20,7 +20,18 @@ namespace Infrastructure.Services
         UsersAccounts usersAccounts { get; set; } = new UsersAccounts();
         public UserDTO CreateUser(UserDTO user)
         {
-            usersAccounts.users.Add(user);
+            var existingUser = usersAccounts.users.FirstOrDefault(x => x.UserId == user.UserId);
+            if (existingUser != null)
+            {
+                user.Success = false;
+                throw new InvalidOperationException("User ID already exists.");
+            }
+            else
+            {
+                usersAccounts.users.Add(user);
+                user.Success = true;
+            }
+
             return user;
         }
         public void DeleteUser(int userId)
@@ -29,7 +40,10 @@ namespace Infrastructure.Services
             if (user != null)
             {
                 usersAccounts.users.Remove(user);
+                user.Success = true;
             }
+            else
+                user.Success = false;
         }
         public UserDTO GetUserById(int userId)
         {

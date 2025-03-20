@@ -41,18 +41,27 @@ namespace Infrastructure.Services
         }
         public UserDTO UpdateBalance(string action, int userId, int accountId, double amount)
         {
-            double balance = GetBalance(accountId, userId);
-            switch (action)
+            var user = usersAccounts.users.FirstOrDefault(x => x.UserId == userId);
+            if (user != null)
             {
-                case "withdraw":
-                    balance -= amount;
-                    return usersAccounts.users.FirstOrDefault(x => x.UserId == userId) ?? new UserDTO();
-                case "deposit":
-                    balance += amount;
-                    return usersAccounts.users.FirstOrDefault(x => x.UserId == userId) ?? new UserDTO();
-                default:
-                    return new UserDTO();
+                var account = user.Account.FirstOrDefault(x => x.AccountId == accountId);
+                if (account != null)
+                {
+                    switch (action)
+                    {
+                        case "withdraw":
+                            account.Balance -= amount;
+                            break;
+                        case "deposit":
+                            account.Balance += amount;
+                            break;
+                        default:
+                            return new UserDTO();
+                    }
+                    return user;
+                }
             }
+            return new UserDTO();
         }
     }
 }

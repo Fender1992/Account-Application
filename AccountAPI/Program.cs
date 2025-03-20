@@ -17,8 +17,8 @@ builder.Services.AddSwaggerGen();
 //    client.BaseAddress = new Uri(config["API:BaseUrl"]);
 //});
 
-builder.Services.AddScoped<IAccountRepository, AccountRepository>();
-builder.Services.AddScoped<IUsersRepository, UsersRepository>();
+builder.Services.AddSingleton<IAccountRepository, AccountRepository>();
+builder.Services.AddSingleton<IUsersRepository, UsersRepository>();
 
 var app = builder.Build();
 
