@@ -18,6 +18,11 @@ namespace Infrastructure.Data
                 Password = "password1",
                 FirstName = "John",
                 LastName = "Doe",
+                Role = new RolesDTO
+                {
+                    RoleId = 1,
+                    RoleName = "Admin"
+                },
                 Account = new List<AccountDTO>
                 {
                     new AccountDTO
@@ -37,6 +42,11 @@ namespace Infrastructure.Data
                 Password = "password2",
                 FirstName = "Jane",
                 LastName = "Doe",
+                Role = new RolesDTO
+                {
+                    RoleId = 2,
+                    RoleName = "User"
+                },
                 Account = new List<AccountDTO>
                 {
                     new AccountDTO
@@ -64,6 +74,11 @@ namespace Infrastructure.Data
                 Password = "password3",
                 FirstName = "John",
                 LastName = "Smith",
+                Role = new RolesDTO
+                {
+                    RoleId = 3,
+                    RoleName = "User"
+                },
                 Account = new List<AccountDTO>
                 {
                     new AccountDTO
@@ -83,6 +98,11 @@ namespace Infrastructure.Data
                 Password = "password4",
                 FirstName = "Jane",
                 LastName = "Smith",
+                Role = new RolesDTO
+                {
+                    RoleId = 4,
+                    RoleName = "User"
+                },
                 Account = new List<AccountDTO>
                 {
                     new AccountDTO

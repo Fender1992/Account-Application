@@ -13,29 +13,5 @@ namespace AccountAPI.ViewModels
         public bool CanEdit { get; set; }
         public string AccountType { get; set; }
 
-        public static AccountDTO ToDTO(AccountViewModel accountViewModel)
-        {
-            return new AccountDTO
-            {
-                AccountId = accountViewModel.AccountId,
-                AccountName = accountViewModel.AccountName,
-                Balance = accountViewModel.Balance,
-                CurrencyCode = accountViewModel.CurrencyCode,
-                CanEdit = accountViewModel.CanEdit,
-                AccountType = accountViewModel.AccountType
-            };
-        }
-        public static AccountViewModel ToViewModel(AccountDTO accountDTO)
-        {
-            return new AccountViewModel
-            {
-                AccountId = accountDTO.AccountId,
-                AccountName = accountDTO.AccountName,
-                Balance = accountDTO.Balance,
-                CurrencyCode = accountDTO.CurrencyCode,
-                CanEdit = accountDTO.CanEdit,
-                AccountType = accountDTO.AccountType
-            };
-        }
     }
 }

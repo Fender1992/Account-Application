@@ -1,5 +1,6 @@
-﻿using AccountAPI.ViewModels;
+using AccountAPI.ViewModels;
 using Application.DTO_s;
+using AutoMapper;
 using Domain.Entities;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Http;
@@ -13,25 +14,28 @@ namespace AccountAPI.Controllers
     public class UserController : ControllerBase
     {
         private readonly ILogger<UserController> _logger;
-        private readonly IUsersRepository _userRepository;
+        private readonly IUserService _userService;
         private List<string> errors = new List<string>();
-        public UserController(IUsersRepository userRepository, ILogger<UserController> logger)
+        private IMapper _mapper;
+        public UserController(IUserService userService, ILogger<UserController> logger, IMapper mapper)
         {
-            _userRepository = userRepository;
+            _userService = userService;
             _logger = logger;
+            _mapper = mapper;
         }
         private UserViewModel _userViewModel { get; set; } = new UserViewModel();
         // GET: UserController
         [HttpGet("{id}")]
         public ActionResult GetUserById(int userId)
         {
-            var user = _userRepository.GetUserById(userId);
+            var user = _userService.GetUserById(userId);
+
             return Ok(user);
         }
         [HttpDelete("{id}")]
         public ActionResult DeleteUser(int userId)
         {
-            var user = _userRepository.GetUserById(userId);
+            var user = _userService.GetUserById(userId);
             try
             {
                 if (user.UserId == 0)
@@ -50,7 +54,7 @@ namespace AccountAPI.Controllers
                 }
                 else
                 {
-                    _userRepository.DeleteUser(userId);
+                    _userService.DeleteUser(userId);
                     return Ok(new
                     {
                         message = "User deleted successfully.",
@@ -93,9 +97,9 @@ namespace AccountAPI.Controllers
             };
             try
             {
-                UserDTO _u = UserViewModel.ToDTO(userViewModel);
-                _userRepository.CreateUser(_u);
-                if (_u.Success)
+                UserDTO userDto = _mapper.Map<UserViewModel, UserDTO>(userViewModel);
+                _userService.CreateUser(userDto);
+                if (userDto.Success)
                 {
                     var account = userViewModel.Account.FirstOrDefault();
                     return Ok(new

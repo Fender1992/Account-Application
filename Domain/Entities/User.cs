@@ -13,5 +13,6 @@ namespace Domain.Entities
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public List<Account> Account { get; set; }
+        public Roles Role { get; set; }
     }
 }

@@ -15,5 +15,6 @@ namespace Domain.Entities
         public bool CanEdit { get; set; }
         public User User { get; set; }
         public string AccountType { get; set; }
+        public User CreatedBy { get; set; }
     }
 }
