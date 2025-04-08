@@ -11,41 +11,48 @@ namespace Infrastructure.Services
     public interface IUserService
     {
         // Define methods for user-related operations
-        void CreateUser(UserDTO user);
-        void UpdateUser(int userId, string username, string password);
-        void DeleteUser(int userId);
-        UserDTO GetUserById(int userId);
+        Task<UserDTO> CreateUser(UserDTO user);
+        Task<UserDTO?> UpdateUser(UserDTO user);
+        Task DeleteUser(int userId);
+        Task<UserDTO> GetUserById(int userId); // Fix: Corrected method signature
     }
     public class UserService : IUserService
     {
         private readonly IUsersRepository _userRepository;
-        private readonly Mapper _userMapper;
         public UserService(IUsersRepository userRepository)
         {
             _userRepository = userRepository;
         }
-        public void CreateUser(UserDTO user)
+        public async Task<UserDTO> CreateUser(UserDTO user)
         {
-            if (user == null)
+            var currentUser = _userRepository.GetUserById(user.UserId);
+            if (currentUser.Id != 0)
+                throw new ArgumentException("User already exists");
+            else
+                await Task.Run(() => _userRepository.CreateUser(user));
+            return user;
+        }
+
+        public async Task DeleteUser(int userId)
+        {
+            await Task.Run(() => _userRepository.DeleteUser(userId));
+        }
+
+        public async Task<UserDTO> GetUserById(int userId)
+        {
+            var user = await _userRepository.GetUserById(userId);
+            return user;
+        }
+
+        public async Task<UserDTO?> UpdateUser(UserDTO user)
+        {
+            var currentUser = await _userRepository.GetUserById(user.UserId);
+            if (currentUser == null)
                 throw new ArgumentNullException(nameof(user));
-
-            //var userMapper = _userMapper.Map<UserViewModel, UserDTO>(user);
-
-        }
-
-        public void DeleteUser(int userId)
-        {
-            throw new NotImplementedException();
-        }
-
-        public UserDTO GetUserById(int userId)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void UpdateUser(int userId, string username, string password)
-        {
-            throw new NotImplementedException();
+            user.FirstName = currentUser.FirstName;
+            user.LastName = currentUser.LastName;
+            user.Password = currentUser.Password;
+            return await _userRepository.UpdateUser(user);
         }
     }
 }

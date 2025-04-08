@@ -3,9 +3,11 @@ using Application.DTO_s;
 using AutoMapper;
 using Domain.Entities;
 using Infrastructure.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Threading.Tasks;
 
 namespace AccountAPI.Controllers
 {
@@ -17,83 +19,73 @@ namespace AccountAPI.Controllers
         private readonly IUserService _userService;
         private List<string> errors = new List<string>();
         private IMapper _mapper;
+        private UserViewModel _userViewModel = new UserViewModel();
         public UserController(IUserService userService, ILogger<UserController> logger, IMapper mapper)
         {
             _userService = userService;
             _logger = logger;
             _mapper = mapper;
         }
-        private UserViewModel _userViewModel { get; set; } = new UserViewModel();
         // GET: UserController
         [HttpGet("{id}")]
-        public ActionResult GetUserById(int userId)
+        public ActionResult GetUserById(int id)
         {
-            var user = _userService.GetUserById(userId);
-
+            var user = _userService.GetUserById(id);
             return Ok(user);
         }
         [HttpDelete("{id}")]
-        public ActionResult DeleteUser(int userId)
+        [Authorize]
+        public async Task<ActionResult> DeleteUser([FromBody] UserViewModel user, int id)
         {
-            var user = _userService.GetUserById(userId);
+            UserDTO userDTO = _mapper.Map<UserViewModel, UserDTO>(user);
+            var checkedUser = await _userService.GetUserById(id);
             try
             {
-                if (user.UserId == 0)
+                if (checkedUser == null || checkedUser.UserId <= 0)
                 {
-                    return NotFound(new
+                    return BadRequest(new TransactionViewModel
                     {
-                        message = "User does not exist."
-                    });
-                }
-                else if (user.Account.Select(account => account.Balance).Sum() > 0)
-                {
-                    return BadRequest(new
-                    {
-                        message = "User has a balance greater than zero. Cannot delete user."
+                        Message = "Invalid user ID.",
+                        Success = false
                     });
                 }
                 else
                 {
-                    _userService.DeleteUser(userId);
-                    return Ok(new
+                    await _userService.DeleteUser(userDTO.UserId);
+                    return Ok(new TransactionViewModel
                     {
-                        message = "User deleted successfully.",
-                        user = new
-                        {
-                            UserId = user.UserId,
-                            AccountId = user.Account.FirstOrDefault()?.AccountId ?? 0,
-                            Success = true
-                        }
+                        Message = "User deleted successfully.",
+                        Success = true
                     });
                 }
-                ;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting user {Id}", userId);
-                return StatusCode(500, new
+                _logger.LogError(ex, "Error deleting user {Id}", userDTO.UserId);
+                return StatusCode(500, new TransactionViewModel
                 {
-                    message = "Failed to delete user. Try again later."
+                    Message = "Failed to delete user. Try again later."
                 });
             }
         }
 
         [HttpPost]
-        public ActionResult CreateUser(int userId, double initialDeposit, int accountType)
+        public ActionResult CreateUser([FromBody] UserViewModel user,
+            double intialDeposit, string accountType)
         {
             var userViewModel = new UserViewModel
             {
-                Id = userId,
+                Id = user.Id,
                 Account = new List<AccountViewModel>
-                            {
-                                new AccountViewModel
-                                {
-                                    AccountId = new Random().Next(),
-                                    Balance = initialDeposit,
-                                    CurrencyCode = "USD",
-                                    AccountType = accountType == 1 ? "Checking" : "Savings"
-                                }
-                            }
+                {
+                    new AccountViewModel
+                    {
+                        AccountId = new Random().Next(),
+                        Balance = intialDeposit,
+                        CurrencyCode = "USD",
+                        AccountType = accountType
+                    }
+                }
             };
             try
             {
@@ -102,45 +94,44 @@ namespace AccountAPI.Controllers
                 if (userDto.Success)
                 {
                     var account = userViewModel.Account.FirstOrDefault();
-                    return Ok(new
+                    if (account == null)
                     {
-                        message = "User created successfully.",
-                        user = new
+                        return BadRequest(new TransactionViewModel
                         {
-                            Id = userId,
-                            Account = new
-                            {
-                                AccountId = new Random().Next(),
-                                Balance = initialDeposit,
-                                CurrencyCode = "USD",
-                                AccountType = account?.AccountType ?? "Unknown",
-                                Success = true,
-                            }
-                        }
+                            Message = "Account creation failed.",
+                            Success = false
+                        });
+                    }
+                    return Ok(new TransactionViewModel
+                    {
+                        Message = "User created successfully.",
+                        Success = true,
+                        Account = account,
+                        Amount = intialDeposit,
                     });
                 }
                 else
                 {
-                    return BadRequest(new
+                    return BadRequest(new TransactionViewModel
                     {
-                        message = "User creation failed.",
+                        Message = "User creation failed.",
                         Success = false
                     });
                 }
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new
+                return BadRequest(new TransactionViewModel
                 {
-                    message = ex.Message
+                    Message = ex.Message
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating user");
-                return StatusCode(500, new
+                return StatusCode(500, new TransactionViewModel
                 {
-                    message = "Failed to create user. Try again later."
+                    Message = "Failed to create user. Try again later."
                 });
             }
         }

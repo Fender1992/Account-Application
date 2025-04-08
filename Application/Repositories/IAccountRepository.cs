@@ -11,8 +11,8 @@ namespace Infrastructure.Services
     public interface IAccountRepository
     {
         AccountDTO GetAccountById(int userId, int accountId);
-        double GetBalance(int userId, int accountId);
-        UserDTO UpdateBalance(string action, int userId, int accountId, double amount);
+        Task<double> GetBalance(int userId, int accountId);
+        Task<double> Withdraw(int userId, int accountId, double amount);
     }
 
     public class AccountRepository : IAccountRepository
@@ -25,21 +25,23 @@ namespace Infrastructure.Services
                 .SelectMany(e => e.Account)
                 .FirstOrDefault(a => a.AccountId == accountId) ?? new AccountDTO();
         }
-        public double GetBalance(int userId, int accountId)
+        public Task<double> GetBalance(int userId, int accountId)
         {
             var user = usersAccounts.users.FirstOrDefault(x => x.UserId == userId);
-            
+
             if (user != null)
             {
                 var account = user.Account.FirstOrDefault(x => x.AccountId == accountId);
                 if (account != null)
                 {
-                    return account.Balance;
+                    return Task.FromResult(account.Balance);
                 }
             }
-            return 0.0;
+            return Task.FromResult(0.0);
         }
-        public UserDTO UpdateBalance(string action, int userId, int accountId, double amount)
+
+
+        public Task<double> Withdraw(int userId, int accountId, double amount)
         {
             var user = usersAccounts.users.FirstOrDefault(x => x.UserId == userId);
             if (user != null)
@@ -47,21 +49,11 @@ namespace Infrastructure.Services
                 var account = user.Account.FirstOrDefault(x => x.AccountId == accountId);
                 if (account != null)
                 {
-                    switch (action)
-                    {
-                        case "withdraw":
-                            account.Balance -= amount;
-                            break;
-                        case "deposit":
-                            account.Balance += amount;
-                            break;
-                        default:
-                            return new UserDTO();
-                    }
-                    return user;
+                    account.Balance -= amount;
+                    return Task.FromResult(account.Balance);
                 }
             }
-            return new UserDTO();
+            return Task.FromResult(0.0);
         }
     }
 }

@@ -11,8 +11,8 @@ namespace Infrastructure.Services
     public interface IUsersRepository
     {
         UserDTO CreateUser(UserDTO user);
-        UserDTO GetUserById(int userId);
-        UserDTO UpdateUser(UserDTO user);
+        Task<UserDTO?> GetUserById(int userId);
+        Task<UserDTO?> UpdateUser(UserDTO user);
         void DeleteUser(int userId);
     }
     public class UsersRepository : IUsersRepository
@@ -24,19 +24,23 @@ namespace Infrastructure.Services
             user.Success = true;
             return user;
         }
-        public void DeleteUser(int userId)
+        public async void DeleteUser(int userId)
         {
-            var user = GetUserById(userId);
-            UsersAccounts.users.Remove(user);
+            var user = await GetUserById(userId);
+            if (user != null)
+            {
+                UsersAccounts.users.Remove(user);
+            }
         }
-        public UserDTO GetUserById(int userId)
+        public async Task<UserDTO?> GetUserById(int userId)
         {
-            return UsersAccounts.users.FirstOrDefault(x => x.UserId == userId) ?? new UserDTO();
+            var user = UsersAccounts.users.FirstOrDefault(x => x.UserId == userId);
+            return await Task.FromResult(user);
         }
-        public UserDTO UpdateUser(UserDTO user)
+        public async Task<UserDTO?> UpdateUser(UserDTO user)
         {
             var existingUser = UsersAccounts.users.FirstOrDefault(x => x.UserId == user.UserId);
-            return new UserDTO();
+            return await Task.FromResult(existingUser);
         }
     }
 }

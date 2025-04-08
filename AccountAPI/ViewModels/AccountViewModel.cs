@@ -11,7 +11,8 @@ namespace AccountAPI.ViewModels
         public double Balance { get; set; }
         public string CurrencyCode { get; set; }
         public bool CanEdit { get; set; }
+        [Required(ErrorMessage = "Account type must be Savings or Checking.")]
         public string AccountType { get; set; }
-
+       
     }
 }

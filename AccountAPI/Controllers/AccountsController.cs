@@ -1,6 +1,7 @@
 using AccountAPI.ViewModels;
 using Application.DTO_s;
 using Infrastructure.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AccountAPI.Controllers;
@@ -10,22 +11,23 @@ namespace AccountAPI.Controllers;
 public class AccountsController : ControllerBase
 {
     private readonly ILogger<AccountsController> _logger;
-    private readonly IAccountRepository _accountService;
-    private readonly IUsersRepository _userRepository;
+    private readonly IAccountService _accountService;
+    private readonly IUserService _userService;
     private List<string> errors = new List<string>();
-    public AccountsController(ILogger<AccountsController> logger, IAccountRepository accountService, IUsersRepository userRepository)
+    public AccountsController(ILogger<AccountsController> logger, IAccountService accountService, IUserService userService)
     {
         _logger = logger;
         _accountService = accountService;
-        _userRepository = userRepository;
+        _userService = userService;
     }
 
-    [HttpGet("{userId}")]
-    public IActionResult GetBalance(int userId, int accountId)
+    [HttpGet("balance/{userId}/{accountId}")]
+    [Authorize]
+    public async Task<IActionResult> GetBalance(int userId, int accountId)
     {
         try
         {
-            double balance = _accountService.GetBalance(userId, accountId);
+            double balance = await _accountService.GetBalance(userId, accountId);
             return Ok(balance);
         }
         catch (Exception ex)
@@ -35,47 +37,25 @@ public class AccountsController : ControllerBase
         }
     }
 
-    [HttpPut("{userId}")]
-    [ValidateAntiForgeryToken]
-    public IActionResult UpdateBalance(int userId, int accountId, [FromQuery] string action, [FromQuery] double amount)
+    [HttpPost("withdraw/{userId}/{accountId}")]
+    public async Task<IActionResult> Withdraw(int userId, int accountId, double amount)
     {
-        if (userId <= 0)
-            errors.Add("User ID must be greater than zero.");
-
-        if (accountId <= 0)
-            errors.Add("Account ID must be greater than zero.");
-
-        if (string.IsNullOrWhiteSpace(action) || !(action == "deposit" || action == "withdraw"))
-            errors.Add("Action must be either 'deposit' or 'withdraw'.");
-
-        if (amount <= 0)
-            errors.Add("Amount must be greater than zero.");
-
-        if (errors.Any())
-            return BadRequest(new { errors });
-
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
         try
         {
-            UserDTO user = _accountService.UpdateBalance(action, userId, accountId, amount);
-            var _u = UserViewModel.ToViewModel(user);
+            double newBalance = await _accountService.Withdraw(userId, accountId, amount);
+            UserDTO user = await _userService.GetUserById(userId); // Assuming there is a method to get user details
 
-            var userViewModel = new 
+            var userViewModel = new
             {
                 Id = user.UserId,
                 Success = true,
-                ccountId = user.Account.FirstOrDefault(x => x.AccountId == accountId)?.AccountId ?? 0,
-                Balance = _accountService.GetBalance(userId, accountId),
-                
+                AccountId = user.Account.FirstOrDefault(x => x.AccountId == accountId)?.AccountId ?? 0,
+                Balance = newBalance,
             };
 
-            return Ok(new
+            return Ok(new TransactionViewModel
             {
-                message = "Balance updated successfully.",
-                user = userViewModel
+                Message = "Balance updated successfully.",
             });
 
         }

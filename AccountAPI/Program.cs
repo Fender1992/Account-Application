@@ -20,6 +20,12 @@ builder.Services.AddSwaggerGen();
 //    client.BaseAddress = new Uri(config["API:BaseUrl"]);
 //});
 
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    });
+
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.AddAuthorization(options =>
@@ -46,7 +52,8 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-
+builder.Services.AddSingleton<IUsersRepository, UsersRepository>();
+builder.Services.AddSingleton<IAccountRepository, AccountRepository>();
 
 builder.Services.AddSingleton<IAccountService, AccountService>();
 builder.Services.AddSingleton<IUserService, UserService>();
