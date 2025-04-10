@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace AccountAPI.Controllers
 {
     [ApiController]
-    [Route("api/user/[controller]")]
+    [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
         private readonly ILogger<UserController> _logger;
@@ -28,22 +28,25 @@ namespace AccountAPI.Controllers
         }
         // GET: UserController
         [HttpGet("{id}")]
-        public ActionResult GetUserById(int id)
+        public async Task<ActionResult> GetUserById(int id)
         {
-            var user = _userService.GetUserById(id);
-            return Ok(user);
+            UserDTO? user = await _userService.GetUserById(id);
+            return Ok(new
+            {
+                LastName = user.LastName,
+                FirstName = user.FirstName,
+                Balance = user.Account.Select(x => x.Balance)
+            });
         }
         [HttpDelete("{id}")]
-        [Authorize]
-        public async Task<ActionResult> DeleteUser([FromBody] UserViewModel user, int id)
+        public async Task<ActionResult> DeleteUser(int id)
         {
-            UserDTO userDTO = _mapper.Map<UserViewModel, UserDTO>(user);
-            var checkedUser = await _userService.GetUserById(id);
+            UserDTO? user = await _userService.GetUserById(id);
             try
             {
-                if (checkedUser == null || checkedUser.UserId <= 0)
+                if (user == null || user.UserId <= 0)
                 {
-                    return BadRequest(new TransactionViewModel
+                    return BadRequest(new 
                     {
                         Message = "Invalid user ID.",
                         Success = false
@@ -51,18 +54,17 @@ namespace AccountAPI.Controllers
                 }
                 else
                 {
-                    await _userService.DeleteUser(userDTO.UserId);
-                    return Ok(new TransactionViewModel
+                    await _userService.DeleteUser(user.UserId);
+                    return Ok(new 
                     {
                         Message = "User deleted successfully.",
-                        Success = true
                     });
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting user {Id}", userDTO.UserId);
-                return StatusCode(500, new TransactionViewModel
+                _logger.LogError(ex, "Error deleting user {Id}", user.UserId);
+                return StatusCode(500, new 
                 {
                     Message = "Failed to delete user. Try again later."
                 });

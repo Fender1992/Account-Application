@@ -10,44 +10,96 @@ namespace Infrastructure.Services
 {
     public interface IAccountService
     {
-        //Task<AccountDTO> CreateAccount(string username, string password);
-        Task<double> GetBalance(int userId, int accountId);
-        Task<double> Withdraw(int userId, int accountId, double amount);
-        void DeleteAccount(string username);
+        //Task<Tuple<UserDTO, string>> CreateAccount(string username, string password);
+        Task<double> GetBalance(int userId);
+        Task<double> WithdrawService(int userId, double amount);
+        Task<double> DepositService(int userId, double amount);
+        Task<Tuple<UserDTO, string>> DeleteAccount(int accountId);
         bool ValidateCredentials(string username, string password);
     }
     public class AccountService : IAccountService
     {
         private IAccountRepository _accountRepository;
+        private IUsersRepository _userRepository;
         //public async Task<AccountDTO> CreateAccount(AccountDTO account)
         //{
         //    //await _accountRepository.Cre.AddAsync(account);
         //}
-        public void DeleteAccount(string username)
+        public AccountService(IAccountRepository accountRepository, IUsersRepository userRepository)
         {
-            throw new NotImplementedException();
+            _accountRepository = accountRepository;
+            _userRepository = userRepository;
         }
 
-        public async Task<double> GetBalance(int userId, int accountId)
+        public async Task<double> GetBalance(int userId)
         {
-            double balance = await _accountRepository.GetBalance(userId, accountId);
-            return balance;
-        }
-
-        public Task<double> Withdraw(int userId, int accountId, double amount)
-        {
-            var userAccount = _accountRepository.GetAccountById(userId, accountId);
-            if (userAccount != null)
+            var user = _userRepository.GetUserById(userId);
+            if (user == null)
             {
-                userAccount.Balance -= amount;
-                return Task.FromResult(userAccount.Balance);
+                throw new ArgumentException("User ID must be greater than zero.");
             }
-            return Task.FromResult(0.0);
+            else
+            {
+                double balance = await _accountRepository.GetBalance(userId);
+                return balance;
+            }
+
+        }
+
+        public async Task<double> WithdrawService(int userId, double amount)
+        {
+            var user = _userRepository.GetUserById(userId);
+            double balance = await _accountRepository.GetBalance(userId);
+            if (user != null && (amount > 0 && amount < balance))
+            {
+                balance = await _accountRepository.Withdraw(userId, amount);
+                return balance;
+            }
+            else
+            {
+                throw new ArgumentException("User ID must be greater than zero.");
+            }
         }
 
         public bool ValidateCredentials(string username, string password)
         {
             throw new NotImplementedException();
+        }
+
+        public async Task<double> DepositService(int userId, double amount)
+        {
+            var user = _userRepository.GetUserById(userId);
+            if (user != null && amount > 0)
+            {
+                double balance = await _accountRepository.Deposit(userId, amount);
+                return balance;
+            }
+            else
+            {
+                throw new ArgumentException("User ID must be greater than zero.");
+            }
+        }
+
+        public async Task<Tuple<UserDTO, string>> DeleteAccount(int userId)
+        {
+            UserDTO? user = await _userRepository.GetUserById(userId); // Use nullable type
+            if (user != null) // Check for null explicitly
+            {
+                var accountId = await _accountRepository.GetAccountIdByUserId(userId);
+                if (accountId != 0)
+                {
+                    await _accountRepository.DeleteAccount(accountId);
+                    return new Tuple<UserDTO, string>(user, "Account deleted successfully.");
+                }
+                else
+                {
+                    throw new ArgumentException("Account ID must be greater than zero.");
+                }
+            }
+            else
+            {
+                throw new ArgumentException("User ID must be greater than zero.");
+            }
         }
     }
 }

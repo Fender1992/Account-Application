@@ -1,5 +1,6 @@
 using AccountAPI.ViewModels;
 using Application.DTO_s;
+using Domain.Entities;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace AccountAPI.Controllers;
 
 [ApiController]
-[Route("api/account/[controller]")]
+[Route("api/[controller]")]
 public class AccountsController : ControllerBase
 {
     private readonly ILogger<AccountsController> _logger;
@@ -21,14 +22,16 @@ public class AccountsController : ControllerBase
         _userService = userService;
     }
 
-    [HttpGet("balance/{userId}/{accountId}")]
-    [Authorize]
-    public async Task<IActionResult> GetBalance(int userId, int accountId)
+    [HttpGet("balance/{userId}")]
+    public async Task<IActionResult> GetBalance(int userId)
     {
         try
         {
-            double balance = await _accountService.GetBalance(userId, accountId);
-            return Ok(balance);
+            double balance = await _accountService.GetBalance(userId);
+            return Ok(new 
+            {
+                Message = $"Your current balance is {balance:C}.",
+            });
         }
         catch (Exception ex)
         {
@@ -37,25 +40,53 @@ public class AccountsController : ControllerBase
         }
     }
 
-    [HttpPost("withdraw/{userId}/{accountId}")]
-    public async Task<IActionResult> Withdraw(int userId, int accountId, double amount)
+    [HttpPost("withdraw/{userId}")]
+    public async Task<IActionResult> Withdraw(int userId, double amount)
     {
         try
         {
-            double newBalance = await _accountService.Withdraw(userId, accountId, amount);
+            double newBalance = await _accountService.WithdrawService(userId, amount);
+            UserDTO user = await _userService.GetUserById(userId); 
+
+            var userViewModel = new
+            {
+                Id = user.UserId,
+                Success = true,
+                AccountId = user.Account.Select(x => x.AccountId),
+                Balance = newBalance,
+            };
+
+            return Ok(new 
+            {
+                Message = $"You have successfully withdrew {amount:C}. Your new balance is {newBalance:C}.",
+            });
+
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating balance for user {Id}", userId);
+            return StatusCode(500, "Internal Server Error");
+        }
+    }
+    [HttpPost("deposit/{userId}")]
+    public async Task<IActionResult> Deposit(int userId, double amount)
+    {
+        try
+        {
+            double newBalance = await _accountService.DepositService(userId, amount);
             UserDTO user = await _userService.GetUserById(userId); // Assuming there is a method to get user details
 
             var userViewModel = new
             {
                 Id = user.UserId,
                 Success = true,
-                AccountId = user.Account.FirstOrDefault(x => x.AccountId == accountId)?.AccountId ?? 0,
+                AccountId = user.Account.Select(x => x.AccountId),
                 Balance = newBalance,
             };
 
-            return Ok(new TransactionViewModel
+            return Ok(new 
             {
-                Message = "Balance updated successfully.",
+                Message = $"Balance updated successfully, Your new balance is {newBalance:C}.",
             });
 
         }
