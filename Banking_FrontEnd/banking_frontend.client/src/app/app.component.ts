@@ -1,37 +1,52 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
+import { ApiService } from './services/api.service'; 
 
-interface WeatherForecast {
-  date: string;
-  temperatureC: number;
-  temperatureF: number;
-  summary: string;
+export interface fetchData {
+  userId: number;
+  firstName: string;
+  lastName: string;
 }
-
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   standalone: false,
   styleUrl: './app.component.css'
 })
-export class AppComponent implements OnInit {
-  public forecasts: WeatherForecast[] = [];
 
-  constructor(private http: HttpClient) {}
+
+export class AppComponent implements OnInit {
+  data: any;
+  loading = false;
+  error: string | null = null;
+  public Users: fetchData[] = [];
+  constructor(private apiService: ApiService) {}
 
   ngOnInit() {
-    this.getForecasts();
+    this.fetchData();
   }
 
-  getForecasts() {
-    this.http.get<WeatherForecast[]>('/weatherforecast').subscribe(
-      (result) => {
-        this.forecasts = result;
+
+  fetchData(): void {
+    this.loading = true;
+    this.error = null;
+
+    this.apiService.getAllUsers().subscribe({
+      next: (response) => {
+        console.log('API response:', response);
+        this.Users = response.map((user: any) => ({
+          userId: user.userId,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        }));
+        this.loading = false;
       },
-      (error) => {
-        console.error(error);
+      error: (err) => {
+        console.error('API error:', err);
+        this.error = 'Error fetching data: ' + err.message;
+        this.loading = false;
       }
-    );
+    });
   }
 
   title = 'banking_frontend.client';

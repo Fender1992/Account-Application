@@ -9,7 +9,7 @@ const PROXY_CONFIG = [
       "api/Accounts",
       "api/User",
     ],
-    target,
+    target: 'https://localhost:44377',
     secure: false
   }
 ]

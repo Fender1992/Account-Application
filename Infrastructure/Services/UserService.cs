@@ -15,6 +15,7 @@ namespace Infrastructure.Services
         Task<UserDTO?> UpdateUser(UserDTO user);
         Task DeleteUser(int userId);
         Task<UserDTO> GetUserById(int userId); // Fix: Corrected method signature
+        Task<List<UserDTO>> GetAllUsers();
     }
     public class UserService : IUserService
     {
@@ -22,6 +23,11 @@ namespace Infrastructure.Services
         public UserService(IUsersRepository userRepository)
         {
             _userRepository = userRepository;
+        }
+        public async Task<List<UserDTO>> GetAllUsers() 
+        {
+            List<UserDTO> users = await _userRepository.GetAllUsers();
+            return users; 
         }
         public async Task<UserDTO> CreateUser(UserDTO user)
         {

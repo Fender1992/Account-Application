@@ -38,6 +38,12 @@ namespace AccountAPI.Controllers
                 Balance = user.Account.Select(x => x.Balance)
             });
         }
+        [HttpGet]
+        public async Task<ActionResult<List<UserDTO>>> GetAllUsers()
+        {
+            List<UserDTO> users = await _userService.GetAllUsers();
+            return Ok(users);
+        }
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteUser(int id)
         {

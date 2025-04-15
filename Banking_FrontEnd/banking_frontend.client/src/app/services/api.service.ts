@@ -9,10 +9,12 @@ import { environment } from '../../environments/environment';
 export class ApiService {
   private apiUrl = environment.apiUrl;
   constructor(private http: HttpClient) { }
+
   getAllUsers(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/api/User`);
+    console.log(`Calling API at: ${this.apiUrl}/User`);
+    return this.http.get<any>(`${this.apiUrl}/User`);
   }
   getUserById(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/api/User/${id}`);
+    return this.http.get<any>(`${this.apiUrl}/User/${id}`);
   }
 }

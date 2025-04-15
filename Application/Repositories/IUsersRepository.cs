@@ -14,10 +14,20 @@ namespace Infrastructure.Services
         Task<UserDTO?> GetUserById(int userId);
         Task<UserDTO?> UpdateUser(UserDTO user);
         void DeleteUser(int userId);
+        Task<List<UserDTO>> GetAllUsers();
     }
     public class UsersRepository : IUsersRepository
     {
         UsersAccounts UsersAccounts { get; set; } = new UsersAccounts();
+        public async Task<List<UserDTO>> GetAllUsers()
+        {
+            List<UserDTO> users = new List<UserDTO>();
+            foreach (var user in UsersAccounts.users)
+            {
+                users.Add(user);
+            }
+            return users;
+        }
         public UserDTO CreateUser(UserDTO user)
         {
             UsersAccounts.users.Add(user);
