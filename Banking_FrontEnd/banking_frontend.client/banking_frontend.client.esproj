@@ -7,4 +7,12 @@
     <!-- Folder where production build objects will be placed -->
     <BuildOutputFolder>$(MSBuildProjectDirectory)\dist\banking_frontend.client\browser\</BuildOutputFolder>
   </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="src\app\core\Models\" />
+    <Folder Include="src\app\features\" />
+    <Folder Include="src\app\shared\components\" />
+    <Folder Include="src\app\shared\directives\" />
+    <Folder Include="src\app\shared\models\" />
+    <Folder Include="src\app\shared\pipes\" />
+  </ItemGroup>
 </Project>

@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
-import { ApiService } from './services/api.service'; 
+import { ApiService } from './core/services/api.service';
 
 export interface fetchData {
   userId: number;
@@ -20,7 +20,7 @@ export class AppComponent implements OnInit {
   loading = false;
   error: string | null = null;
   public Users: fetchData[] = [];
-  constructor(private apiService: ApiService) {}
+  constructor(private apiService: ApiService) { }
 
   ngOnInit() {
     this.fetchData();
@@ -30,23 +30,29 @@ export class AppComponent implements OnInit {
   fetchData(): void {
     this.loading = true;
     this.error = null;
-
-    this.apiService.getAllUsers().subscribe({
-      next: (response) => {
-        console.log('API response:', response);
-        this.Users = response.map((user: any) => ({
-          userId: user.userId,
-          firstName: user.firstName,
-          lastName: user.lastName,
-        }));
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('API error:', err);
-        this.error = 'Error fetching data: ' + err.message;
-        this.loading = false;
-      }
-    });
+    try {
+      this.apiService.getAllUsers().subscribe({
+        next: (response) => {
+          console.log('API response:', response);
+          this.Users = response.map((user: any) => ({
+            userId: user.userId,
+            firstName: user.firstName,
+            lastName: user.lastName,
+          }));
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error('API error:', err);
+          this.error = 'Error fetching data: ' + err.message;
+          this.loading = false;
+        }
+      });
+    }
+    catch (error) {
+      console.error('Error fetching data:', error);
+      this.error = 'Error fetching data: ' + error;
+      this.loading = false;
+    }
   }
 
   title = 'banking_frontend.client';
