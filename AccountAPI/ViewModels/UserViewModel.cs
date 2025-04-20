@@ -17,6 +17,6 @@ namespace AccountAPI.ViewModels
         public string LastName { get; set; }
         public bool Success { get; set; } = false;
         public List<AccountViewModel> Account { get; set; }
-        public List<AccountViewModel> AccountId { get; set; }
+        //public int AccountId { get; set; }
     }
 }

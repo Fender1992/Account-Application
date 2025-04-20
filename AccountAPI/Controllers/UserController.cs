@@ -52,7 +52,7 @@ namespace AccountAPI.Controllers
             {
                 if (user == null || user.UserId <= 0)
                 {
-                    return BadRequest(new 
+                    return BadRequest(new
                     {
                         Message = "Invalid user ID.",
                         Success = false
@@ -61,7 +61,7 @@ namespace AccountAPI.Controllers
                 else
                 {
                     await _userService.DeleteUser(user.UserId);
-                    return Ok(new 
+                    return Ok(new
                     {
                         Message = "User deleted successfully.",
                     });
@@ -70,7 +70,7 @@ namespace AccountAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting user {Id}", user.UserId);
-                return StatusCode(500, new 
+                return StatusCode(500, new
                 {
                     Message = "Failed to delete user. Try again later."
                 });
@@ -84,6 +84,10 @@ namespace AccountAPI.Controllers
             var userViewModel = new UserViewModel
             {
                 Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                UserName = user.UserName,
+                Password = user.Password,
                 Account = new List<AccountViewModel>
                 {
                     new AccountViewModel
@@ -91,8 +95,9 @@ namespace AccountAPI.Controllers
                         AccountId = new Random().Next(),
                         Balance = intialDeposit,
                         CurrencyCode = "USD",
-                        AccountType = accountType
-                    }
+                        AccountType = accountType,
+                        AccountName = user.Account.FirstOrDefault()?.AccountName 
+            }
                 }
             };
             try
@@ -104,23 +109,22 @@ namespace AccountAPI.Controllers
                     var account = userViewModel.Account.FirstOrDefault();
                     if (account == null)
                     {
-                        return BadRequest(new TransactionViewModel
+                        return BadRequest(new
                         {
                             Message = "Account creation failed.",
                             Success = false
                         });
                     }
-                    return Ok(new TransactionViewModel
+                    return Ok(new
                     {
                         Message = "User created successfully.",
-                        Success = true,
                         Account = account,
                         Amount = intialDeposit,
                     });
                 }
                 else
                 {
-                    return BadRequest(new TransactionViewModel
+                    return BadRequest(new
                     {
                         Message = "User creation failed.",
                         Success = false
@@ -129,7 +133,7 @@ namespace AccountAPI.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new TransactionViewModel
+                return BadRequest(new
                 {
                     Message = ex.Message
                 });
@@ -137,7 +141,7 @@ namespace AccountAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating user");
-                return StatusCode(500, new TransactionViewModel
+                return StatusCode(500, new
                 {
                     Message = "Failed to create user. Try again later."
                 });
