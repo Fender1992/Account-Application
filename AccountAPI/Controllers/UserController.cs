@@ -17,9 +17,7 @@ namespace AccountAPI.Controllers
     {
         private readonly ILogger<UserController> _logger;
         private readonly IUserService _userService;
-        private List<string> errors = new List<string>();
         private IMapper _mapper;
-        private UserViewModel _userViewModel = new UserViewModel();
         public UserController(IUserService userService, ILogger<UserController> logger, IMapper mapper)
         {
             _userService = userService;
@@ -28,123 +26,109 @@ namespace AccountAPI.Controllers
         }
         // GET: UserController
         [HttpGet("{id}")]
-        public async Task<ActionResult> GetUserById(int id)
+        public async Task<ActionResult<ApiResponse<UserViewModel>>> GetUserById(int id)
         {
             UserDTO? user = await _userService.GetUserById(id);
-            return Ok(new
+            return Ok(ApiResponse<UserViewModel>.CreateResponse<UserViewModel>(true, "User retrieved successfully.", new UserViewModel()
             {
-                LastName = user.LastName,
+                Id = user.UserId,
+                UserName = user.UserName,
                 FirstName = user.FirstName,
-                Balance = user.Account.Select(x => x.Balance)
-            });
+                LastName = user.LastName,
+            }));
         }
-        [HttpGet]
+        [HttpGet("allUsers")]
+
         public async Task<ActionResult<List<UserDTO>>> GetAllUsers()
         {
             List<UserDTO> users = await _userService.GetAllUsers();
             return Ok(users);
         }
         [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteUser(int id)
+        public async Task<ActionResult<ApiResponse<string>>> DeleteUser(int id)
         {
-            UserDTO? user = await _userService.GetUserById(id);
             try
             {
+                UserDTO? user = await _userService.GetUserById(id);
                 if (user == null || user.UserId <= 0)
                 {
-                    return BadRequest(new
-                    {
-                        Message = "Invalid user ID.",
-                        Success = false
-                    });
+                    return BadRequest(ApiResponse<string>.CreateResponse<string>(false, "User not found."));
                 }
                 else
                 {
                     await _userService.DeleteUser(user.UserId);
-                    return Ok(new
-                    {
-                        Message = "User deleted successfully.",
-                    });
+                    return Ok(ApiResponse<string>.CreateResponse<string>(true, "User deleted successfully."));
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting user {Id}", user.UserId);
-                return StatusCode(500, new
-                {
-                    Message = "Failed to delete user. Try again later."
-                });
+                _logger.LogError(ex, "Error deleting user {Id}", id);
+                return BadRequest(ApiResponse<string>.CreateResponse<string>(false, "Failed to delete user. Try again later."));
+
             }
         }
 
-        [HttpPost]
-        public ActionResult CreateUser([FromBody] UserViewModel user,
-            double intialDeposit, string accountType)
+        [HttpPost("createUser")]
+        public ActionResult<ApiResponse<AccountViewModel>> CreateUser([FromBody] UserViewModel user)
         {
-            var userViewModel = new UserViewModel
-            {
-                Id = user.Id,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                UserName = user.UserName,
-                Password = user.Password,
-                Account = new List<AccountViewModel>
-                {
-                    new AccountViewModel
-                    {
-                        AccountId = new Random().Next(),
-                        Balance = intialDeposit,
-                        CurrencyCode = "USD",
-                        AccountType = accountType,
-                        AccountName = user.Account.FirstOrDefault()?.AccountName 
-            }
-                }
-            };
             try
             {
+                // Validate input
+                if (user == null)
+                    return BadRequest(ApiResponse<AccountViewModel>.CreateResponse<AccountViewModel>(false, "Invalid user data"));
+
+                // Extract account data once
+                var accountData = user.Account?.FirstOrDefault();
+                var initialBalance = accountData?.Balance ?? 0;
+                var accountType = accountData?.AccountType ?? "";
+                var accountName = accountData?.AccountName ?? "";
+
+                // Create a new account with proper initialization
+                var newAccount = new AccountViewModel
+                {
+                    AccountId = new Random().Next(),
+                    Balance = initialBalance,
+                    CurrencyCode = "USD",
+                    AccountType = accountType,
+                    AccountName = accountName
+                };
+
+                // Create user with the new account
+                var userViewModel = new UserViewModel
+                {
+                    Id = user.Id,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    UserName = user.UserName,
+                    Password = user.Password,
+                    Account = new List<AccountViewModel> { newAccount }
+                };
+
+                // Map and create user
                 UserDTO userDto = _mapper.Map<UserViewModel, UserDTO>(userViewModel);
                 _userService.CreateUser(userDto);
-                if (userDto.Success)
-                {
-                    var account = userViewModel.Account.FirstOrDefault();
-                    if (account == null)
-                    {
-                        return BadRequest(new
-                        {
-                            Message = "Account creation failed.",
-                            Success = false
-                        });
-                    }
-                    return Ok(new
-                    {
-                        Message = "User created successfully.",
-                        Account = account,
-                        Amount = intialDeposit,
-                    });
-                }
-                else
-                {
-                    return BadRequest(new
-                    {
-                        Message = "User creation failed.",
-                        Success = false
-                    });
-                }
+
+                if (!userDto.Success)
+                    return BadRequest(ApiResponse<AccountViewModel>.CreateResponse<AccountViewModel>(false, "User creation failed."));
+
+                // Return success response with account info
+                return Ok(ApiResponse<AccountViewModel>.CreateResponse(
+                    true,
+                    "User created successfully.",
+                    newAccount
+                ));
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new
-                {
-                    Message = ex.Message
-                });
+                return BadRequest(ApiResponse<AccountViewModel>.CreateResponse<AccountViewModel>(false, ex.Message));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating user");
-                return StatusCode(500, new
-                {
-                    Message = "Failed to create user. Try again later."
-                });
+                return StatusCode(500, ApiResponse<AccountViewModel>.CreateResponse<AccountViewModel>(
+                    false,
+                    "Failed to create user. Try again later."
+                ));
             }
         }
 

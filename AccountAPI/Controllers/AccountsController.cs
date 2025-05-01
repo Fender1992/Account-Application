@@ -21,27 +21,33 @@ public class AccountsController : ControllerBase
         _accountService = accountService;
         _userService = userService;
     }
-
+    /// <summary>
+    /// Retrieves the current balance of the user's account.
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <returns></returns>
     [HttpGet("balance/{userId}")]
-    public async Task<IActionResult> GetBalance(int userId)
+    public async Task<ActionResult<ApiResponse<string>>> GetBalance(int userId)
     {
         try
         {
             double balance = await _accountService.GetBalance(userId);
-            return Ok(new 
-            {
-                Message = $"Your current balance is {balance:C}.",
-            });
+            return Ok(ApiResponse<string>.CreateResponse<string>(true, $"Your current balance is {balance}");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving balance for user {Id}", userId);
-            return StatusCode(500, "Internal Server Error");
+            return BadRequest(ApiResponse<string>.CreateResponse<string>(false, "Failed to get you current balance."));
         }
     }
-
+    /// <summary>
+    /// Withdraws a specified amount from the user's account.
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <param name="amount"></param>
+    /// <returns></returns>
     [HttpPost("withdraw/{userId}")]
-    public async Task<IActionResult> Withdraw(int userId, double amount)
+    public async Task<ActionResult<ApiResponse<string>>> Withdraw(int userId, double amount)
     {
         try
         {
@@ -56,18 +62,20 @@ public class AccountsController : ControllerBase
                 Balance = newBalance,
             };
 
-            return Ok(new 
-            {
-                Message = $"You have successfully withdrew {amount:C}. Your new balance is {newBalance:C}.",
-            });
-
+            return Ok(ApiResponse<string>.CreateResponse<string>(true, $"Withdrawl successful. Your new balance is {newBalance}"));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating balance for user {Id}", userId);
-            return StatusCode(500, "Internal Server Error");
+            return BadRequest(ApiResponse<string>.CreateResponse<string>(true, "Failed to withdraw. Please try again later"));
         }
     }
+    /// <summary>
+    /// Deposits a specified amount into the user's account.
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <param name="amount"></param>
+    /// <returns></returns>
     [HttpPost("deposit/{userId}")]
     public async Task<IActionResult> Deposit(int userId, double amount)
     {
