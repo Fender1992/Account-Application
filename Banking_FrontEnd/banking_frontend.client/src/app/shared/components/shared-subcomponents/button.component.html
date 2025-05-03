@@ -1,0 +1,13 @@
+<button [ngClass]="['btn', 'btn-' + type, fullWidth ? 'btn-block' : '']"
+        [disabled]="disabled || loading"
+        (click)="handleClick()">
+  <ng-container *ngIf="loading">
+    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+  </ng-container>
+
+  <ng-container *ngIf="icon && !loading">
+    <i [ngClass]="icon" class="me-2"></i>
+  </ng-container>
+
+  <span>{{ label }}</span>
+</button>
